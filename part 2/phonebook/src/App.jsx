@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import Filter from './components/Filter'
+import PersonForm from './components/PersonForm'
+import Persons from './components/Persons'
 
 const App = () => {
   const [persons, setPersons] = useState([
@@ -15,7 +18,8 @@ const App = () => {
     event.preventDefault()
     const personObject = {
       name: newName,
-      number: newNumber
+      number: newNumber,
+      id: 10
     }
     let flag = false
 
@@ -31,6 +35,7 @@ const App = () => {
         setPersons(persons.concat(personObject))
         setNewName('')
         setNewNumber('')
+        setNumbersToShow(persons)
     }
     flag = false
   }
@@ -54,24 +59,11 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <div>filter shown with <input onChange={handleFilterChange} /></div>
-      <h2>add a new</h2>
-      <form onSubmit={addPerson}>
-        <div>
-          name: <input onChange={handlePersonChange}/>
-        </div>
-        <div>
-          number: <input onChange={handleNumberChange} />
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
-      <h2>Numbers</h2>
-      <div>
-        {numbersToShow.map(person => <p key={person.id}>{person.name} {person.number}</p>)}
-      </div>
-      <div>debug: {newNumber}</div>
+      <Filter handleChange={handleFilterChange} />
+      <h3>add a new</h3>
+      <PersonForm addPerson={addPerson} handlePersonChange={handlePersonChange} handleNumberChange={handleNumberChange} />
+      <h3>Numbers</h3>
+      <Persons numbersToShow={numbersToShow} />
     </div>
   )
 }
