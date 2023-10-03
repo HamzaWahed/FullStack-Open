@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import phonebookService from './services/phonebook'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
@@ -11,12 +11,11 @@ const App = () => {
   const [numbersToShow, setNumbersToShow] = useState([])
 
   useEffect(() => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
-        setNumbersToShow(response.data)
+    phonebookService
+      .getAll()
+      .then(initialNumbers => {
+        setPersons(initialNumbers)
+        setNumbersToShow(initialNumbers)
       })
   }, [])
 
@@ -25,23 +24,31 @@ const App = () => {
     const personObject = {
       name: newName,
       number: newNumber,
-      id: 10
     }
-    let flag = false
 
+    let flag = false
     persons.forEach(person => {
-      if (person.name === personObject.name) {
-        alert(`${newName} is already in the phonebook`)
+      if (person.name === personObject.name && confirm(`${person.name} is already added to phonebook, replace the old number with a new one?`)) {
+        phonebookService
+          .update(person.id, personObject)
+          .then(newNumber => {
+            console.log(newNumber)
+          })
+          
         flag = true
         return
       }
     })
 
     if (!flag) {
-        setPersons(persons.concat(personObject))
-        setNewName('')
-        setNewNumber('')
-        setNumbersToShow(persons)
+        phonebookService
+          .create(personObject)
+          .then(newNumbers => {
+            setPersons(persons.concat(newNumbers))
+            setNewName('')
+            setNewNumber('')
+            setNumbersToShow(persons)
+          })
     }
     flag = false
   }
@@ -62,6 +69,18 @@ const App = () => {
     }
   }
 
+  const deleteUser = (id,name) => {
+    if (!confirm(`Delete ${name} ?`)) {
+      return
+    }
+
+    phonebookService
+      .remove(id)
+      .then(deletedUser => {
+        console.log(deletedUser)
+      })
+  }
+
   return (
     <div>
       <h2>Phonebook</h2>
@@ -69,7 +88,7 @@ const App = () => {
       <h3>add a new</h3>
       <PersonForm addPerson={addPerson} handlePersonChange={handlePersonChange} handleNumberChange={handleNumberChange} />
       <h3>Numbers</h3>
-      <Persons numbersToShow={numbersToShow} />
+      <Persons numbersToShow={numbersToShow} handleClick={deleteUser}/>
     </div>
   )
 }
