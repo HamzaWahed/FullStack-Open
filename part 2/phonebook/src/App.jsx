@@ -3,12 +3,16 @@ import phonebookService from './services/phonebook'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
+import Notification from './components/Notification'
+import Error from './components/Error'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [numbersToShow, setNumbersToShow] = useState([])
+  const [notification, setNotification] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     phonebookService
@@ -32,7 +36,10 @@ const App = () => {
         phonebookService
           .update(person.id, personObject)
           .then(newNumber => {
-            console.log(newNumber)
+            setNotification(`Updated ${person.name}`)
+            setTimeout(() => {
+              setNotification(null)
+            }, 5000)
           })
           
         flag = true
@@ -48,6 +55,10 @@ const App = () => {
             setNewName('')
             setNewNumber('')
             setNumbersToShow(persons)
+            setNotification(`Added ${personObject.name}`)
+            setTimeout(() => {
+              setNotification(null)
+            }, 5000)
           })
     }
     flag = false
@@ -84,6 +95,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notification} />
+      <Error message={error} />
       <Filter handleChange={handleFilterChange} />
       <h3>add a new</h3>
       <PersonForm addPerson={addPerson} handlePersonChange={handlePersonChange} handleNumberChange={handleNumberChange} />
