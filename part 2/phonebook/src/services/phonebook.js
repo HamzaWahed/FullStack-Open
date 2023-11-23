@@ -14,7 +14,7 @@ const create = (newObject) => {
 
 const update = (id, newObject) => {
   const request = axios.put(`${baseUrl}/${id}`, newObject);
-  data = request
+  return request
     .then((response) => response.data)
     .catch((error) => {
       setError(
@@ -24,7 +24,6 @@ const update = (id, newObject) => {
         setError(null);
       }, 5000);
     });
-  return data;
 };
 
 const remove = (id) => {
