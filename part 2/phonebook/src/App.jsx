@@ -60,6 +60,10 @@ const App = () => {
               setNotification(null)
             }, 5000)
           })
+          .catch(error => {
+            setError(error.response.data.error)
+            console.log(error.response.data.error)
+          })
     }
     flag = false
   }
