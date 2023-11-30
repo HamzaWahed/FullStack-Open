@@ -51,6 +51,25 @@ test("a valid blog can be added", async () => {
   expect(authors).toContain("Micheal Artin");
 });
 
+test("verify undefined likes field", async () => {
+  const newBlog = {
+    title: "Abstract Algebra",
+    author: "Micheal Artin",
+    url: "",
+  };
+
+  await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/);
+
+  const response = await api.get("/api/blogs");
+  expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
+  expect(response.body[2].likes).toBeDefined();
+  expect(response.body[2].likes).toBe(0);
+});
+
 afterAll(async () => {
   await mongoose.connection.close();
 });
