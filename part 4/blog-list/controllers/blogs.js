@@ -14,8 +14,13 @@ blogRouter.post("/", async (request, response, next) => {
     url: body.url,
     likes: body.likes ? body.likes : 0,
   });
-  const savedBlog = await blog.save();
-  response.status(201).json(savedBlog);
+
+  if (!body.title || !body.url) {
+    response.status(400).json(blog);
+  } else {
+    const savedBlog = await blog.save();
+    response.status(201).json(savedBlog);
+  }
 });
 
 module.exports = blogRouter;

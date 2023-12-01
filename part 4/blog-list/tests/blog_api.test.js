@@ -31,7 +31,7 @@ test("a valid blog can be added", async () => {
   const newBlog = {
     title: "Abstract Algebra",
     author: "Micheal Artin",
-    url: "",
+    url: "https://www.goodreads.com/en/book/show/1247754",
     likes: 20,
   };
 
@@ -55,7 +55,7 @@ test("verify undefined likes field", async () => {
   const newBlog = {
     title: "Abstract Algebra",
     author: "Micheal Artin",
-    url: "",
+    url: "https://www.goodreads.com/en/book/show/1247754",
   };
 
   await api
@@ -68,6 +68,26 @@ test("verify undefined likes field", async () => {
   expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
   expect(response.body[2].likes).toBeDefined();
   expect(response.body[2].likes).toBe(0);
+});
+
+test("blog has no title field", async () => {
+  const newBlog = {
+    author: "Micheal Artin",
+    url: "https://www.goodreads.com/en/book/show/1247754",
+    likes: 20,
+  };
+
+  await api.post("/api/blogs").send(newBlog).expect(400);
+});
+
+test("blog has no url field", async () => {
+  const newBlog = {
+    title: "Abstract Algebra",
+    author: "Micheal Artin",
+    likes: 20,
+  };
+
+  await api.post("/api/blogs").send(newBlog).expect(400);
 });
 
 afterAll(async () => {
