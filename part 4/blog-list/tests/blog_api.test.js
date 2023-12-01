@@ -13,81 +13,142 @@ beforeEach(async () => {
   await Promise.all(promiseArray);
 });
 
-test("correct number of blogs are returned as json", async () => {
-  const response = await api
-    .get("/api/blogs")
-    .expect(200)
-    .expect("Content-Type", /application\/json/);
+describe("when there is initally some blogs saved", () => {
+  test("correct number of blogs are returned as json", async () => {
+    const response = await api
+      .get("/api/blogs")
+      .expect(200)
+      .expect("Content-Type", /application\/json/);
 
-  expect(response.body).toHaveLength(helper.initialBlogs.length);
+    expect(response.body).toHaveLength(helper.initialBlogs.length);
+  });
+
+  test("blog id field is defined instead of _id", async () => {
+    const response = await api.get("/api/blogs");
+    expect(response.body[0].id).toBeDefined();
+  });
 });
 
-test("verify id field", async () => {
-  const response = await api.get("/api/blogs");
-  expect(response.body[0].id).toBeDefined();
+describe("addition of a new blog", () => {
+  test("a valid blog can be added", async () => {
+    const newBlog = {
+      title: "Abstract Algebra",
+      author: "Micheal Artin",
+      url: "https://www.goodreads.com/en/book/show/1247754",
+      likes: 20,
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const response = await api.get("/api/blogs");
+
+    const titles = response.body.map((r) => r.title);
+    const authors = response.body.map((r) => r.author);
+
+    expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
+    expect(titles).toContain("Abstract Algebra");
+    expect(authors).toContain("Micheal Artin");
+  });
+
+  test("blog without likes field is added", async () => {
+    const newBlog = {
+      title: "Abstract Algebra",
+      author: "Micheal Artin",
+      url: "https://www.goodreads.com/en/book/show/1247754",
+    };
+
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const response = await api.get("/api/blogs");
+    expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
+    expect(response.body[2].likes).toBeDefined();
+    expect(response.body[2].likes).toBe(0);
+  });
+
+  test("blog without title field is added", async () => {
+    const newBlog = {
+      author: "Micheal Artin",
+      url: "https://www.goodreads.com/en/book/show/1247754",
+      likes: 20,
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(400);
+  });
+
+  test("blog without url field is added", async () => {
+    const newBlog = {
+      title: "Abstract Algebra",
+      author: "Micheal Artin",
+      likes: 20,
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(400);
+  });
 });
 
-test("a valid blog can be added", async () => {
-  const newBlog = {
-    title: "Abstract Algebra",
-    author: "Micheal Artin",
-    url: "https://www.goodreads.com/en/book/show/1247754",
-    likes: 20,
-  };
+describe("deletion a blog", () => {
+  test("a blog can be deleted", async () => {
+    const blogsAtStart = (await Blog.find({})).map((blog) => blog.toJSON());
+    const blogToDelete = blogsAtStart[0];
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(201)
-    .expect("Content-Type", /application\/json/);
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
 
-  const response = await api.get("/api/blogs");
+    const blogsAtEnd = (await Blog.find({})).map((blog) => blog.toJSON());
+    expect(blogsAtEnd).toHaveLength(blogsAtStart.length - 1);
 
-  const titles = response.body.map((r) => r.title);
-  const authors = response.body.map((r) => r.author);
-
-  expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
-  expect(titles).toContain("Abstract Algebra");
-  expect(authors).toContain("Micheal Artin");
+    const titles = blogsAtEnd.map((blog) => blog.title);
+    expect(titles).not.toContain(blogToDelete.title);
+  });
 });
 
-test("verify undefined likes field", async () => {
-  const newBlog = {
-    title: "Abstract Algebra",
-    author: "Micheal Artin",
-    url: "https://www.goodreads.com/en/book/show/1247754",
-  };
+describe("updation of an existing blog", () => {
+  test("a blog can be updated", async () => {
+    const blogsAtStart = (await Blog.find({})).map((blog) => blog.toJSON());
+    const blogToUpdate = blogsAtStart[0];
 
-  await api
-    .post("/api/blogs")
-    .send(newBlog)
-    .expect(201)
-    .expect("Content-Type", /application\/json/);
+    const blog = {
+      title: "Abstract Algebra",
+      author: "Micheal Artin",
+      url: "https://www.goodreads.com/en/book/show/1247754",
+      likes: 20,
+    };
 
-  const response = await api.get("/api/blogs");
-  expect(response.body).toHaveLength(helper.initialBlogs.length + 1);
-  expect(response.body[2].likes).toBeDefined();
-  expect(response.body[2].likes).toBe(0);
-});
+    const updatedBlog = await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(blog)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
 
-test("blog has no title field", async () => {
-  const newBlog = {
-    author: "Micheal Artin",
-    url: "https://www.goodreads.com/en/book/show/1247754",
-    likes: 20,
-  };
+    const blogsAtEnd = (await Blog.find({})).map((blog) => blog.toJSON());
+    expect(blogsAtEnd).toHaveLength(blogsAtStart.length);
 
-  await api.post("/api/blogs").send(newBlog).expect(400);
-});
+    expect(updatedBlog.body.id).toBe(blogToUpdate.id);
+  });
 
-test("blog has no url field", async () => {
-  const newBlog = {
-    title: "Abstract Algebra",
-    author: "Micheal Artin",
-    likes: 20,
-  };
+  test("likes field of a blog can be updated", async () => {
+    const blogsAtStart = (await Blog.find({})).map((blog) => blog.toJSON());
+    const blogToUpdate = blogsAtStart[0];
 
-  await api.post("/api/blogs").send(newBlog).expect(400);
+    const updatedBlog = await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send({ ...blogToUpdate, likes: 5 })
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const blogsAtEnd = (await Blog.find({})).map((blog) => blog.toJSON());
+    expect(blogsAtEnd).toHaveLength(blogsAtStart.length);
+
+    expect(updatedBlog.body.likes).toBe(5);
+    expect(updatedBlog.body.title).toBe(blogToUpdate.title);
+  });
 });
 
 afterAll(async () => {
